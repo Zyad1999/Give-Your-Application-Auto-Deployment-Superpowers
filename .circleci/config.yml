@@ -320,7 +320,7 @@ jobs:
 
   smoke-test:
     docker:
-      - image: cimg/node:13.8.0
+      - image: sleavely/node-awscli:14.x
     steps:
       - checkout
       - run:
@@ -330,8 +330,11 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            export BACKEND_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
-            export API_URL="http://${BACKEND_IP}:3030"
+            BACKEND_IP=$(aws ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --output text)
+            export API_URL=http://${BACKEND_IP}:3030
       - run:
           name: Backend smoke test.
           command: |
@@ -346,10 +349,10 @@ jobs:
           command: |
             if curl -s http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website.${AWS_DEFAULT_REGION}.amazonaws.com | grep "Welcome"
             then
-              echo "Frontend OK"
+              echo "Frontend Working"
               exit 0
             else
-              echo "Frontend NOT OK"
+              echo "Frontend NOT Working"
               exit 1
             fi
       - destroy-environment:
