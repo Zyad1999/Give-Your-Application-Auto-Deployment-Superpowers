@@ -35,7 +35,7 @@ commands:
           when: on_fail
           command: |
             # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-            SUCCESS=$(tail ~/project/backend/mig_res.txt)
+            SUCCESS=$(tail ~/project/backend/migres.txt)
             if(($SUCCESS==1)); 
             then
               cd ~/project/backend
@@ -213,19 +213,20 @@ jobs:
           command: |
             cd backend
             npm install
-            touch mig_res.txt
-            npm run migrations > mig_res.txt
+            touch migres.txt
+            npm run migrations > migres.txt
+            cat migres.txt
       - run:
           name: Save Migration Results
           command: |
-            if grep -q "has been executed successfully." ~/project/backend/mig_res.txt
+            if grep -q "has been executed successfully." ~/project/backend/migres.txt
             then
-              echo "1" >> ~/project/backend/mig_res.txt
+              echo "1" >> ~/project/backend/migres.txt
             fi
       - persist_to_workspace:
           root: ~/
           paths: 
-            - project/backend/mig_res.txt
+            - project/backend/migres.txt
       - destroy-environment:
           workflowID: ${CIRCLE_WORKFLOW_ID:0:7}
       - revert-migrations:
@@ -252,8 +253,7 @@ jobs:
               --output text)
             export API_URL="http://${BACKEND_IP}:3030"
             touch frontend/.env
-            echo "API_URL=http://${BACKEND_PUBLIC_IP}:3030" >> frontend/.env
-            echo "${API_URL}"
+            echo "API_URL=http://${BACKEND_IP}:3030" >> frontend/.env
       - run:
           name: Deploy frontend objects
           command: |
@@ -339,7 +339,7 @@ jobs:
             if curl -s $API_URL/api/status | grep "ok"
             then
               echo "Backend UP"
-              exit 2
+              exit 0
             else
               echo "Backend DOWN"
               exit 1
@@ -406,8 +406,8 @@ jobs:
             if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
             then
               aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
-              aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
-              aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
+              aws cloudformation delete-stack --stack-name "backend-${OldWorkflowID}"
+              aws cloudformation delete-stack --stack-name "frontend-${OldWorkflowID}"
             fi
             
 
