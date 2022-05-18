@@ -377,7 +377,7 @@ jobs:
                       list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
                       --no-paginate --output text)
             echo $workflowID
-            curl https://kvdb.io/${KVDB_BUCKET}/workflowid -d "${workflowID}" -XPATCH
+            curl https://kvdb.io/${KVDB_BUCKET}/workflowid -d "${workflowID}"
             #Deploy cloudfront
             aws cloudformation deploy \
               --template-file .circleci/files/cloudfront.yml \
@@ -394,16 +394,12 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Get old stack workflow id
+          name: Remove old stacks and files
           command: |
             export OldWorkflowID=$(curl --insecure https://kvdb.io/${KVDB_BUCKET}/workflowid)
-            echo "first" $OldWorkflowID 
             export STACKS=($(aws cloudformation list-stacks \
                 --query "StackSummaries[*].StackName" \
                 --stack-status-filter CREATE_COMPLETE --no-paginate --output text)) 
-      - run:
-          name: Remove old stacks and files
-          command: |
             echo "second" $OldWorkflowID 
             if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
             then
@@ -412,7 +408,6 @@ jobs:
               aws cloudformation delete-stack --stack-name "backend-${OldWorkflowID}"
               aws cloudformation delete-stack --stack-name "frontend-${OldWorkflowID}"
             fi
-            
 
 workflows:
   default:
